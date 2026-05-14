@@ -1,0 +1,7 @@
+node_modules
+dist
+lib
+functions/lib
+package-lock.json
+*.min.js
+.vite

@@ -1,0 +1,8 @@
+{
+  "files.associations": {
+    "*.rules": "firestore-rules"
+  },
+  "[firestore-rules]": {
+    "editor.formatOnSave": true
+  }
+}

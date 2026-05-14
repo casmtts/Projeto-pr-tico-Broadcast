@@ -1,0 +1,27 @@
+{
+  "name": "broadcast-saas",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "workspaces": [
+    "web",
+    "functions"
+  ],
+  "scripts": {
+    "dev": "npm --workspace web run dev",
+    "build": "npm --workspace web run build && npm --workspace functions run build",
+    "lint": "npm --workspace web run lint && npm --workspace functions run lint",
+    "test": "npm --workspace web run test && npm --workspace functions run test",
+    "format": "prettier --write \"web/**/*.{ts,tsx,css,html}\" \"functions/src/**/*.ts\" \"*.{json,mjs}\"",
+    "format:check": "prettier --check \"web/**/*.{ts,tsx,css,html}\" \"functions/src/**/*.ts\" \"*.{json,mjs}\"",
+    "emulators": "firebase emulators:start",
+    "test:rules": "firebase emulators:exec --only firestore \"npm run test:firestore-rules -w web\"",
+    "deploy": "firebase deploy",
+    "deploy:functions": "firebase deploy --only functions",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:firestore": "firebase deploy --only firestore"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.2.0"
+  }
+}

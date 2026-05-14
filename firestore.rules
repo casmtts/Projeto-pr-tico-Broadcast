@@ -1,0 +1,113 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownsExisting() {
+      return signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    function ownsIncoming() {
+      return signedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    function unchangedOwner() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    function canModifySentMessage() {
+      return resource.data.status != 'enviada'
+        || resource.data.sentAt == null
+        || request.time <= resource.data.sentAt + duration.value(15, 'm');
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && uid == request.auth.uid;
+      allow create, update: if signedIn()
+        && uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'nome', 'email', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.nome is string
+        && request.resource.data.email is string;
+      allow delete: if false;
+    }
+
+    match /connections/{connectionId} {
+      allow read, delete: if ownsExisting();
+      allow create: if ownsIncoming()
+        && request.resource.data.keys().hasOnly(['id', 'userId', 'nome', 'createdAt'])
+        && request.resource.data.id == connectionId
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() >= 1
+        && request.resource.data.nome.size() <= 100;
+      allow update: if ownsExisting()
+        && unchangedOwner()
+        && request.resource.data.keys().hasOnly(['id', 'userId', 'nome', 'createdAt'])
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() >= 1
+        && request.resource.data.nome.size() <= 100;
+    }
+
+    match /contacts/{contactId} {
+      allow read, delete: if ownsExisting();
+      allow create: if ownsIncoming()
+        && request.resource.data.keys().hasOnly(['id', 'userId', 'connectionId', 'nome', 'telefone', 'createdAt'])
+        && request.resource.data.id == contactId
+        && request.resource.data.connectionId is string
+        && request.resource.data.nome is string
+        && request.resource.data.telefone is string
+        && request.resource.data.nome.size() >= 1
+        && request.resource.data.telefone.size() >= 8;
+      allow update: if ownsExisting()
+        && unchangedOwner()
+        && request.resource.data.connectionId == resource.data.connectionId
+        && request.resource.data.keys().hasOnly(['id', 'userId', 'connectionId', 'nome', 'telefone', 'createdAt'])
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.nome is string
+        && request.resource.data.telefone is string
+        && request.resource.data.nome.size() >= 1
+        && request.resource.data.telefone.size() >= 8;
+    }
+
+    match /messages/{messageId} {
+      allow read: if ownsExisting();
+      allow delete: if ownsExisting() && canModifySentMessage();
+      allow create: if ownsIncoming()
+        && request.resource.data.keys().hasOnly([
+          'id', 'userId', 'connectionId', 'contatosIds', 'mensagem', 'status',
+          'scheduledAt', 'sentAt', 'createdAt'
+        ])
+        && request.resource.data.id == messageId
+        && request.resource.data.connectionId is string
+        && request.resource.data.contatosIds is list
+        && request.resource.data.contatosIds.size() > 0
+        && request.resource.data.mensagem is string
+        && request.resource.data.mensagem.size() >= 1
+        && request.resource.data.mensagem.size() <= 2000
+        && request.resource.data.status in ['agendada', 'enviada'];
+      allow update: if ownsExisting()
+        && unchangedOwner()
+        && canModifySentMessage()
+        && request.resource.data.connectionId == resource.data.connectionId
+        && request.resource.data.keys().hasOnly([
+          'id', 'userId', 'connectionId', 'contatosIds', 'mensagem', 'status',
+          'scheduledAt', 'sentAt', 'createdAt'
+        ])
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.contatosIds is list
+        && request.resource.data.contatosIds.size() > 0
+        && request.resource.data.mensagem is string
+        && request.resource.data.mensagem.size() >= 1
+        && request.resource.data.mensagem.size() <= 2000
+        && request.resource.data.status in ['agendada', 'enviada'];
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
