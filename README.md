@@ -38,7 +38,6 @@ Broadcast é uma plataforma SaaS multi-tenant onde cada cliente autenticado poss
 ### Regras de Negócio Principais
 
 - Sistema **multi-tenant**: cada cliente acessa apenas seus dados
-- Conexões podem referenciar contatos de outras conexões
 - Ao excluir uma conexão, **apenas as mensagens** são removidas (contatos permanecem)
 - Mensagens agendadas são automaticamente processadas por Cloud Functions
 - Tempo real em todas as listagens via Firestore
